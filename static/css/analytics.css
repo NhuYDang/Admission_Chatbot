@@ -1,0 +1,80 @@
+/* Analytics Dashboard specific styles */
+
+/* 3D transforms and effects for analytics cards */
+.element-3d {
+    transform-style: preserve-3d;
+    transform: translateZ(var(--depth-3));
+    transition: transform 0.3s ease;
+}
+
+.element-3d:hover {
+    transform: translateZ(var(--depth-4));
+}
+
+/* Animated icons with 3D effects */
+.icon-3d {
+    display: inline-block;
+    transform-style: preserve-3d;
+    transform: translateZ(var(--depth-2));
+    transition: all 0.3s ease;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: translateZ(var(--depth-2));
+    }
+    50% {
+        transform: translateZ(var(--depth-3));
+    }
+    100% {
+        transform: translateZ(var(--depth-2));
+    }
+}
+
+/* Chart container styling */
+.chart-container {
+    position: relative;
+    height: 300px;
+    border-radius: 10px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+}
+
+/* Table styling */
+.table {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(5px);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.table thead {
+    background: var(--primary-gradient);
+    color: white;
+}
+
+.table thead th {
+    border: none;
+    padding: 15px;
+    font-weight: 500;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(115, 103, 240, 0.05);
+}
+
+/* Card header with gradient background */
+.card-header {
+    border-bottom: 1px solid rgba(115, 103, 240, 0.2);
+    background: linear-gradient(135deg, rgba(115, 103, 240, 0.1), rgba(206, 159, 252, 0.1));
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .chart-container {
+        height: 250px;
+    }
+}

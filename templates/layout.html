@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="vi" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tư vấn tuyển sinh thông minh</title>
+    <!-- Bootstrap CSS (Replit theme) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #7367F0, #CE9FFC);
+            --accent-gradient: linear-gradient(135deg, #F27121, #E94057, #8A2387);
+            --primary-color: #7367F0;
+            --accent-color: #CE9FFC;
+            --primary-light: rgba(115, 103, 240, 0.1);
+            --depth-1: 1px;
+            --depth-2: 3px;
+            --depth-3: 5px;
+            --depth-4: 10px;
+            --shadow-sm: 0 2px 5px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 15px rgba(0, 0, 0, 0.07);
+            --shadow-lg: 0 8px 25px rgba(0, 0, 0, 0.1);
+            --card-border-radius: 16px;
+            --btn-border-radius: 10px;
+        }
+        
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #f5f7fa;
+            background: #f5f7fa url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiPgo8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iYmdfZ3JhZCIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+CiAgICAgICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iI2Y4ZjlmYSIgc3RvcC1vcGFjaXR5PSIxIi8+CiAgICAgICAgPHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjZWNlZGY1IiBzdG9wLW9wYWNpdHk9IjEiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8ZmlsdGVyIGlkPSJub2lzZSIgeD0iMCUiIHk9IjAlIiB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIj4KICAgICAgICA8ZmVUdXJidWxlbmNlIHR5cGU9ImZyYWN0YWxOb2lzZSIgYmFzZUZyZXF1ZW5jeT0iMC42NSIgbnVtT2N0YXZlcz0iMyIgc3RpdGNoVGlsZXM9InN0aXRjaCIgcmVzdWx0PSJub2lzZSIvPgogICAgICAgIDxmZURpc3BsYWNlbWVudE1hcCBpbj0iU291cmNlR3JhcGhpYyIgaW4yPSJub2lzZSIgc2NhbGU9IjIiIHhDaGFubmVsU2VsZWN0b3I9IlIiIHlDaGFubmVsU2VsZWN0b3I9IkciIHJlc3VsdD0iZGlzcGxhY2VkIi8+CiAgICA8L2ZpbHRlcj4KICAgIDxwYXR0ZXJuIGlkPSJhcnRpc3RpY1BhdHRlcm4iIHg9IjAiIHk9IjAiIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIiBwYXR0ZXJuVHJhbnNmb3JtPSJyb3RhdGUoOCkiPgogICAgICAgIDxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjYmdfZ3JhZCkiLz4KICAgICAgICA8Y2lyY2xlIGN4PSI0MCIgY3k9IjQwIiByPSIxNSIgZmlsbD0iIzczNjdmMCIgZmlsbC1vcGFjaXR5PSIwLjAyIi8+CiAgICAgICAgPGNpcmNsZSBjeD0iMTQwIiBjeT0iNjAiIHI9IjIwIiBmaWxsPSIjQ0U5RkZDIiBmaWxsLW9wYWNpdHk9IjAuMDIiLz4KICAgICAgICA8Y2lyY2xlIGN4PSI3MCIgY3k9IjE3MCIgcj0iMTgiIGZpbGw9IiM3MzY3ZjAiIGZpbGwtb3BhY2l0eT0iMC4wMiIvPgogICAgICAgIDxjaXJjbGUgY3g9IjE3MCIgY3k9IjE0MCIgcj0iMTIiIGZpbGw9IiNDRTlGRkMiIGZpbGwtb3BhY2l0eT0iMC4wMiIvPgogICAgICAgIDwhLS0gV2F2ZSBwYXR0ZXJucyAtLT4KICAgICAgICA8cGF0aCBkPSJNMCAyMCBDIDIwIDEwLCA0MCAzMCwgNjAgMjAgUyA4MCAxMCwgMTAwIDIwLCAxMjAgMzAsIDE0MCAyMCwgMTYwIDEwLCAxODAgMjAsIDIwMCAzMCwgMjIwIDIwIiBzdHJva2U9IiM3MzY3ZjAiIHN0cm9rZS13aWR0aD0iMC43IiBzdHJva2Utb3BhY2l0eT0iMC4wOCIgZmlsbD0ibm9uZSIvPgogICAgICAgIDxwYXRoIGQ9Ik0wIDYwIEMgMjAgNTAsIDQwIDcwLCA2MCA2MCBTIDgwIDUwLCAxMDAgNjAsIDEyMCA3MCwgMTQwIDYwLCAxNjAgNTAsIDE4MCA2MCwgMjAwIDcwLCAyMjAgNjAiIHN0cm9rZT0iI0NFOUZGQyIgc3Ryb2tlLXdpZHRoPSIwLjUiIHN0cm9rZS1vcGFjaXR5PSIwLjA2IiBmaWxsPSJub25lIi8+CiAgICAgICAgPHBhdGggZD0iTTAgMTAwIEMgMjAgOTAsIDQwIDExMCwgNjAgMTAwIFMgODAgOTAsIDEwMCAxMDAsIDEyMCAxMTAsIDE0MCAxMDAsIDE2MCA5MCwgMTgwIDEwMCwgMjAwIDExMCwgMjIwIDEwMCIgc3Ryb2tlPSIjNzM2N2YwIiBzdHJva2Utd2lkdGg9IjAuNyIgc3Ryb2tlLW9wYWNpdHk9IjAuMDciIGZpbGw9Im5vbmUiLz4KICAgICAgICA8cGF0aCBkPSJNMCAxNDAgQyAyMCAxMzAsIDQwIDE1MCwgNjAgMTQwIFMgODAgMTMwLCAxMDAgMTQwLCAxMjAgMTUwLCAxNDAgMTQwLCAxNjAgMTMwLCAxODAgMTQwLCAyMDAgMTUwLCAyMjAgMTQwIiBzdHJva2U9IiNDRTlGRkMiIHN0cm9rZS13aWR0aD0iMC42IiBzdHJva2Utb3BhY2l0eT0iMC4wNSIgZmlsbD0ibm9uZSIvPgogICAgICAgIDxwYXRoIGQ9Ik0wIDE4MCBDIDI1IDE2NSwgNTAgMTk1LCA3NSAxODAgUyAxMDAgMTY1LCAxMjUgMTgwLCAxNTAgMTk1LCAxNzUgMTgwLCAyMDAgMTY1LCAyMjUgMTgwIiBzdHJva2U9IiM3MzY3ZjAiIHN0cm9rZS13aWR0aD0iMC44IiBzdHJva2Utb3BhY2l0eT0iMC4wOCIgZmlsbD0ibm9uZSIvPgogICAgICAgIDxwYXRoIGQ9Ik0wIDAgQyAyMCAxMCwgNDAgLTEwLCA2MCAwIFMgODAgMTAsIDEwMCAwLCAxMjAgLTEwLCAxNDAgMCwgMTYwIDEwLCAxODAgMCwgMjAwIC0xMCwgMjIwIDAiIHN0cm9rZT0iI0NFOUZGQyIgc3Ryb2tlLXdpZHRoPSIwLjUiIHN0cm9rZS1vcGFjaXR5PSIwLjA0IiBmaWxsPSJub25lIi8+CiAgICAgICAgPHBhdGggZD0iTTIwMCAwIEMgMTgwIDEwLCAxNjAgLTEwLCAxNDAgMCBTIDEyMCAxMCwgMTAwIDAsIDgwIC0xMCwgNjAgMCwgNDAgMTAsIDIwIDAsIDAgLTEwLCAtMjAgMCIgc3Ryb2tlPSIjNzM2N2YwIiBzdHJva2Utd2lkdGg9IjAuNiIgc3Ryb2tlLW9wYWNpdHk9IjAuMDQiIGZpbGw9Im5vbmUiLz4KICAgICAgICA8IS0tIEFic3RyYWN0IGRvdHMgLS0+CiAgICAgICAgPGNpcmNsZSBjeD0iMjUiIGN5PSIyNSIgcj0iMSIgZmlsbD0iIzczNjdmMCIgZmlsbC1vcGFjaXR5PSIwLjEiLz4KICAgICAgICA8Y2lyY2xlIGN4PSI3NSIgY3k9IjE1IiByPSIxLjUiIGZpbGw9IiNDRTlGRkMiIGZpbGwtb3BhY2l0eT0iMC4xIi8+CiAgICAgICAgPGNpcmNsZSBjeD0iMTI1IiBjeT0iMjUiIHI9IjEiIGZpbGw9IiM3MzY3ZjAiIGZpbGwtb3BhY2l0eT0iMC4xIi8+CiAgICAgICAgPGNpcmNsZSBjeD0iMTc1IiBjeT0iMTUiIHI9IjEuNSIgZmlsbD0iI0NFOUZGQyIgZmlsbC1vcGFjaXR5PSIwLjEiLz4KICAgICAgICA8Y2lyY2xlIGN4PSIyNSIgY3k9Ijc1IiByPSIxLjUiIGZpbGw9IiNDRTlGRkMiIGZpbGwtb3BhY2l0eT0iMC4xIi8+CiAgICAgICAgPGNpcmNsZSBjeD0iNzUiIGN5PSI4NSIgcj0iMSIgZmlsbD0iIzczNjdmMCIgZmlsbC1vcGFjaXR5PSIwLjEiLz4KICAgICAgICA8Y2lyY2xlIGN4PSIxMjUiIGN5PSI3NSIgcj0iMS41IiBmaWxsPSIjQ0U5RkZDIiBmaWxsLW9wYWNpdHk9IjAuMSIvPgogICAgICAgIDxjaXJjbGUgY3g9IjE3NSIgY3k9Ijg1IiByPSIxIiBmaWxsPSIjNzM2N2YwIiBmaWxsLW9wYWNpdHk9IjAuMSIvPgogICAgICAgIDxjaXJjbGUgY3g9IjI1IiBjeT0iMTM1IiByPSIxIiBmaWxsPSIjNzM2N2YwIiBmaWxsLW9wYWNpdHk9IjAuMSIvPgogICAgICAgIDxjaXJjbGUgY3g9Ijc1IiBjeT0iMTI1IiByPSIxLjUiIGZpbGw9IiNDRTlGRkMiIGZpbGwtb3BhY2l0eT0iMC4xIi8+CiAgICAgICAgPGNpcmNsZSBjeD0iMTI1IiBjeT0iMTM1IiByPSIxIiBmaWxsPSIjNzM2N2YwIiBmaWxsLW9wYWNpdHk9IjAuMSIvPgogICAgICAgIDxjaXJjbGUgY3g9IjE3NSIgY3k9IjEyNSIgcj0iMS41IiBmaWxsPSIjQ0U5RkZDIiBmaWxsLW9wYWNpdHk9IjAuMSIvPgogICAgICAgIDxjaXJjbGUgY3g9IjI1IiBjeT0iMTg1IiByPSIxLjUiIGZpbGw9IiNDRTlGRkMiIGZpbGwtb3BhY2l0eT0iMC4xIi8+CiAgICAgICAgPGNpcmNsZSBjeD0iNzUiIGN5PSIxOTUiIHI9IjEiIGZpbGw9IiM3MzY3ZjAiIGZpbGwtb3BhY2l0eT0iMC4xIi8+CiAgICAgICAgPGNpcmNsZSBjeD0iMTI1IiBjeT0iMTg1IiByPSIxLjUiIGZpbGw9IiNDRTlGRkMiIGZpbGwtb3BhY2l0eT0iMC4xIi8+CiAgICAgICAgPGNpcmNsZSBjeD0iMTc1IiBjeT0iMTk1IiByPSIxIiBmaWxsPSIjNzM2N2YwIiBmaWxsLW9wYWNpdHk9IjAuMSIvPgogICAgPC9wYXR0ZXJuPgogICAgPGZpbHRlciBpZD0iZ2xvdyI+CiAgICAgICAgPGZlR2F1c3NpYW5CbHVyIHN0ZERldmlhdGlvbj0iNSIgcmVzdWx0PSJibHVyIi8+CiAgICAgICAgPGZlQmxlbmQgaW49IlNvdXJjZUdyYXBoaWMiIGluMj0iYmx1ciIgbW9kZT0ic2NyZWVuIi8+CiAgICA8L2ZpbHRlcj4KPC9kZWZzPgo8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2FydGlzdGljUGF0dGVybikiLz4KPC9zdmc+');
+            background-attachment: fixed;
+            color: #333;
+        }
+        
+        .navbar {
+            background: rgba(255, 255, 255, 0.9) !important;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(115, 103, 240, 0.2);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+        
+        .navbar-brand span {
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-weight: 700;
+            text-shadow: 0 2px 5px rgba(115, 103, 240, 0.2);
+            transform-style: preserve-3d;
+            transform: translateZ(5px);
+            letter-spacing: 0.5px;
+        }
+        
+        .card {
+            border-radius: 16px;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(115, 103, 240, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
+        
+        /* Removed hover effect as requested */
+        
+        .btn-primary, .bg-primary {
+            background: var(--primary-gradient) !important;
+            border: none;
+            box-shadow: 0 5px 15px rgba(115, 103, 240, 0.3);
+            transform-style: preserve-3d;
+            transform: translateZ(3px);
+            transition: all 0.3s ease;
+            border-radius: 10px;
+        }
+        
+        .btn-primary:active, .bg-primary:active {
+            transform: translateZ(1px);
+            box-shadow: 0 2px 8px rgba(115, 103, 240, 0.2);
+        }
+        
+        .btn-accent {
+            background: var(--accent-gradient) !important;
+            border: none;
+            color: white;
+            box-shadow: 0 5px 15px rgba(233, 64, 87, 0.3);
+            transform-style: preserve-3d;
+            transform: translateZ(3px);
+            transition: all 0.3s ease;
+            border-radius: 10px;
+        }
+        
+        .btn-accent:active {
+            transform: translateZ(1px);
+            box-shadow: 0 2px 8px rgba(233, 64, 87, 0.2);
+        }
+        
+        .chat-container {
+            border-radius: 0 0 16px 16px;
+        }
+        
+        .bot-message {
+            border-left: 4px solid;
+            border-image: var(--primary-gradient) 1;
+        }
+        
+        .user-message {
+            border-right: 4px solid;
+            border-image: var(--accent-gradient) 1;
+        }
+        
+        .session-item {
+            cursor: pointer;
+            border-radius: 12px;
+            transition: all 0.2s ease;
+        }
+        
+        /* Removed hover effect as requested */
+        
+        .session-item.active {
+            background: rgba(115, 103, 240, 0.15);
+        }
+        
+        /* Note: Processing indicator styles moved to main.css */
+    </style>
+    
+    {% block styles %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light sticky-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="{{ url_for('index') }}">
+                <img src="{{ url_for('static', filename='svg/chat_icon.svg') }}" width="32" height="32" class="me-2" alt="Logo">
+                <span class="fs-4">HCMCOU AdmissionAI</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">             
+                    <li class="nav-item">
+                        <button class="btn btn-sm btn-accent ms-2" id="new-chat-button">
+                            <i class="fas fa-plus me-1"></i> Đoạn chat mới
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    <div class="container mt-3">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Main Content -->
+    <main class="container py-4">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-light py-4 mt-5 border-top">
+        <div class="container text-center">
+            <p class="mb-0">&copy; 2025 HCMCOU AdmissionAI - Your admission consulting assistant</p>
+            <p class="small mt-2 text-primary">Powered by Google Gemini</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,501 @@
+/* Main CSS for the chatbot application */
+
+/* Text gradient styling */
+.text-gradient {
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    font-weight: 700;
+    text-shadow: 0 2px 10px rgba(115, 103, 240, 0.3);
+    transform-style: preserve-3d;
+    transform: translateZ(5px);
+    letter-spacing: 0.5px;
+}
+
+/* Chat interface */
+.chat-messages {
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    overflow-y: auto;
+}
+
+.message {
+    margin-bottom: 1rem;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    max-width: 80%;
+    word-wrap: break-word;
+    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.05);
+    transform-style: preserve-3d;
+    transition: all 0.3s ease;
+}
+
+/* Removed hover effect as requested */
+
+.bot-message {
+    align-self: flex-start;
+    background-color: rgba(255, 255, 255, 0.95);
+    border-left: 4px solid;
+    border-image: linear-gradient(135deg, #7367F0, #CE9FFC) 1;
+    color: #333;
+}
+
+.user-message {
+    align-self: flex-end;
+    background-color: rgba(115, 103, 240, 0.1);
+    text-align: right;
+    margin-left: auto;
+    border-right: 4px solid;
+    border-image: linear-gradient(135deg, #F27121, #E94057, #8A2387) 1;
+    color: #333;
+}
+
+.error-message {
+    background-color: rgba(255, 0, 0, 0.1);
+    border-color: #ff0000;
+}
+
+.chat-input {
+    padding: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Processing indicator */
+.processing-indicator {
+    display: inline-block;
+    margin-bottom: 20px;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 15px 20px;
+    border-radius: 18px;
+    color: #555;
+    font-size: 0.9rem;
+    border: 1px solid rgba(115, 103, 240, 0.2);
+    box-shadow: 0 5px 20px rgba(115, 103, 240, 0.1);
+    min-width: 280px;
+    transform-style: preserve-3d;
+    perspective: 800px;
+}
+
+.processing-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.processing-steps .step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    opacity: 0.5;
+    transition: opacity 0.3s ease;
+}
+
+.processing-steps .step:nth-child(1) {
+    animation: fadeStep 0.5s ease forwards;
+}
+
+.processing-steps .step:nth-child(2) {
+    animation: fadeStep 0.5s ease forwards 1s;
+}
+
+.processing-steps .step:nth-child(3) {
+    animation: fadeStep 0.5s ease forwards 2s;
+}
+
+.processing-steps .step:nth-child(4) {
+    animation: fadeStep 0.5s ease forwards 3s;
+}
+
+@keyframes fadeStep {
+    to { opacity: 1; }
+}
+
+.step-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: #7367F0;
+    position: relative;
+    transform: translateZ(5px);
+    box-shadow: 0 2px 5px rgba(115, 103, 240, 0.3);
+}
+
+.processing-steps .step:nth-child(1) .step-dot::after {
+    animation: pulse 1.5s infinite;
+    animation-delay: 0s;
+}
+
+.processing-steps .step:nth-child(2) .step-dot::after {
+    animation: pulse 1.5s infinite;
+    animation-delay: 1s;
+}
+
+.processing-steps .step:nth-child(3) .step-dot::after {
+    animation: pulse 1.5s infinite;
+    animation-delay: 2s;
+}
+
+.processing-steps .step:nth-child(4) .step-dot::after {
+    animation: pulse 1.5s infinite;
+    animation-delay: 3s;
+}
+
+.step-dot::after {
+    content: '';
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid #7367F0;
+    opacity: 0;
+}
+
+.step-text {
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+@keyframes pulse {
+    0% { transform: scale(0.9); opacity: 0; }
+    50% { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(0.9); opacity: 0; }
+}
+
+
+/* Typing dots */
+.typing-dots {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 1.5rem;
+}
+
+.typing-dots span {
+    height: 0.5rem;
+    width: 0.5rem;
+    margin: 0 0.1rem;
+    background-color: #aaa;
+    border-radius: 50%;
+    display: inline-block;
+    animation: typing-dot 1.4s infinite ease-in-out both;
+}
+
+.typing-dots span:nth-child(1) {
+    animation-delay: -0.32s;
+}
+
+.typing-dots span:nth-child(2) {
+    animation-delay: -0.16s;
+}
+
+@keyframes typing-dot {
+    0%, 80%, 100% { 
+        transform: scale(0.6);
+        opacity: 0.6;
+    }
+    40% { 
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Gradient text effect */
+.text-gradient {
+    background: linear-gradient(135deg, #7367F0, #CE9FFC);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+/* Session list styling */
+.session-item {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: 8px;
+    padding: 0.5rem;
+}
+
+/* Removed hover effect as requested */
+
+.session-item.active {
+    background: rgba(115, 103, 240, 0.15);
+    border-left: 3px solid #7367F0;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent; 
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(115, 103, 240, 0.5); 
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(115, 103, 240, 0.8); 
+}
+
+/* Sample question buttons */
+.sample-question {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+/* Removed hover effect as requested */
+
+/* Message content styling */
+.bot-message table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    transform-style: preserve-3d;
+    transform: translateZ(10px); /* 3D effect - brings table forward */
+}
+
+.bot-message th, .bot-message td {
+    border: 1px solid rgba(115, 103, 240, 0.1);
+    padding: 0.75rem;
+    position: relative;
+}
+
+.bot-message tr {
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.bot-message tr:nth-child(even) {
+    background-color: rgba(115, 103, 240, 0.03);
+}
+
+.bot-message th {
+    background: rgba(115, 103, 240, 0.1);
+    color: #333;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(115, 103, 240, 0.1);
+    position: relative;
+}
+
+.bot-message ul, .bot-message ol {
+    padding-left: 1.5rem;
+    margin: 1rem 0;
+    transform-style: preserve-3d;
+    transform: translateZ(5px); /* 3D effect for lists */
+}
+
+.bot-message li {
+    margin-bottom: 0.5rem;
+    position: relative;
+    padding-left: 0.5rem;
+}
+
+.bot-message ul li::before {
+    content: '•';
+    color: #7367F0;
+    position: absolute;
+    left: -1rem;
+    font-size: 1.2rem;
+    transform: translateZ(2px);
+}
+
+.bot-message h4, .bot-message h5, .bot-message h6 {
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.bot-message strong, .bot-message b {
+    color: #7367F0;
+    font-weight: 600;
+}
+
+.bot-message code {
+    background: rgba(115, 103, 240, 0.1);
+    padding: 0.1rem 0.3rem;
+    border-radius: 3px;
+    color: #7367F0;
+}
+
+.bot-message pre {
+    background: rgba(115, 103, 240, 0.05);
+    padding: 1rem;
+    border-radius: 8px;
+    overflow-x: auto;
+    border: 1px solid rgba(115, 103, 240, 0.1);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.03);
+    color: #333;
+}
+
+.bot-message img {
+    max-width: 100%;
+    border-radius: 8px;
+    margin: 1rem 0;
+}
+
+/* Source attribution styling */
+.bot-message small {
+    display: block;
+    padding-top: 0.5rem;
+    border-top: 1px dashed rgba(115, 103, 240, 0.2);
+    margin-top: 0.5rem;
+    color: #888;
+    font-style: italic;
+}
+
+/* Styled data tables */
+.data-table {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 12px;
+    padding: 10px 15px;
+    margin: 15px 0;
+    border-left: 3px solid #7367F0;
+    box-shadow: 0 5px 20px rgba(115, 103, 240, 0.1);
+    transform-style: preserve-3d;
+    transform: translateZ(5px);
+    transition: all 0.3s ease;
+}
+
+/* Removed hover effect as requested */
+
+.admissions-data {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 8px 15px;
+}
+
+.data-row {
+    display: flex;
+    align-items: center;
+    padding: 6px 0;
+    gap: 10px;
+}
+
+.data-label {
+    font-size: 0.9rem;
+    color: #666;
+    min-width: 100px;
+    font-weight: 500;
+}
+
+.data-value {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #CE9FFC;
+}
+
+/* Content sections */
+.content-section {
+    margin-bottom: 1rem;
+    background: rgba(255, 255, 255, 0.8);
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.05);
+    transform-style: preserve-3d;
+    transform: translateZ(2px);
+    transition: all 0.3s ease;
+}
+
+/* Removed hover effect as requested */
+
+/* Source information */
+.source-info {
+    display: block;
+    padding-top: 0.7rem;
+    border-top: 1px dashed rgba(115, 103, 240, 0.2);
+    margin-top: 1rem;
+    font-style: italic;
+    color: #888;
+    transform: translateZ(1px);
+}
+
+/* Feature list styling */
+.feature-list {
+    padding-left: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.feature-list li {
+    margin-bottom: 0.5rem;
+    position: relative;
+}
+
+.feature-list li::before {
+    content: '•';
+    color: #7367F0;
+    position: absolute;
+    left: -1.2rem;
+    font-size: 1.2rem;
+    top: -0.2rem;
+}
+
+/* Accent text */
+.text-accent {
+    color: #CE9FFC !important;
+}
+
+/* Icon animations */
+.fas, .fa, .far, .fab {
+    transform-style: preserve-3d;
+    perspective: 800px;
+    position: relative;
+    animation: icon-float 3s ease-in-out infinite;
+}
+
+@keyframes icon-float {
+    0%, 100% { transform: translateY(0) rotateY(0); }
+    50% { transform: translateY(-5px) rotateY(10deg); }
+}
+
+/* 3D Message effects */
+.message {
+    transform-style: preserve-3d;
+    transition: transform 0.3s ease;
+}
+
+.bot-message {
+    transform: translateZ(4px);
+    box-shadow: 0 4px 12px rgba(115, 103, 240, 0.1);
+}
+
+.user-message {
+    transform: translateZ(3px);
+    box-shadow: 0 4px 12px rgba(233, 64, 87, 0.1);
+}
+
+/* 3D Headings and paragraphs in bot messages */
+.bot-message h4, .bot-message h5, .bot-message h6 {
+    transform-style: preserve-3d;
+    transform: translateZ(2px);
+    margin-bottom: 1rem;
+    position: relative;
+}
+
+/* 3D Icons */
+#chat-sessions-list .fas,
+.card-header .fas,
+.btn .fas {
+    display: inline-block;
+    transform-style: preserve-3d;
+    transform: translateZ(2px);
+    animation: icon-pulse 2s ease-in-out infinite;
+}
+
+@keyframes icon-pulse {
+    0%, 100% { transform: translateZ(2px) scale(1); }
+    50% { transform: translateZ(4px) scale(1.1); }
+}

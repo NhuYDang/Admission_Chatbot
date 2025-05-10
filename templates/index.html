@@ -1,0 +1,499 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Left sidebar: Chat sessions -->
+    <div class="col-lg-3">
+        <div class="card mb-4" style="transform-style: preserve-3d; transform: translateZ(var(--depth-3));">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fs-6"><i class="fas fa-history me-2"></i>Lịch sử</h5>
+                <button id="new-chat-sidebar" class="btn btn-sm btn-accent" style="transform: translateZ(var(--depth-1));">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+            <div class="card-body p-2" style="max-height: 400px; overflow-y: auto;">
+                <div id="chat-sessions-list" class="d-flex flex-column gap-2">
+                    <!-- Chat sessions will be populated here dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="transform-style: preserve-3d; transform: translateZ(var(--depth-3));">
+            <div class="card-header">
+                <h5 class="mb-0 fs-6"><i class="fas fa-lightbulb me-2"></i>Mẫu câu hỏi</h5>
+            </div>
+            <div class="card-body p-2">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-sm text-start sample-question" style="transform-style: preserve-3d; transform: translateZ(var(--depth-2)); transition: transform 0.3s ease;">Chỉ tiêu tuyển sinh năm 2025?</button>
+                    <button class="btn btn-sm text-start sample-question" style="transform-style: preserve-3d; transform: translateZ(var(--depth-2)); transition: transform 0.3s ease;">Các phương thức tuyển sinh của trường?</button>
+                    <button class="btn btn-sm text-start sample-question" style="transform-style: preserve-3d; transform: translateZ(var(--depth-2)); transition: transform 0.3s ease;">Điểm chuẩn ngành Công nghệ thông tin?</button>
+                    <button class="btn btn-sm text-start sample-question" style="transform-style: preserve-3d; transform: translateZ(var(--depth-2)); transition: transform 0.3s ease;">Học phí ngành Ngôn ngữ Anh năm 2025 là bao nhiêu?</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main chat area -->
+    <div class="col-lg-9">
+        <div class="card mb-4" style="transform-style: preserve-3d; transform: translateZ(var(--depth-3));">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0" id="current-chat-title" style="text-shadow: 0 1px 2px rgba(115, 103, 240, 0.2);">
+                    <i class="fas fa-robot me-2"></i>Trợ lý tuyển sinh
+                </h5>
+                <div>
+                    <button id="clear-button" class="btn btn-sm btn-outline-danger me-2" style="transform-style: preserve-3d; transform: translateZ(var(--depth-1));">
+                        <i class="fas fa-trash-alt me-1"></i>Xóa đoạn chat
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="chat-container">
+                    <div id="chat-messages" class="chat-messages p-3" style="height: 500px; overflow-y: auto;">
+                        <!-- Welcome message -->
+                        <div class="message bot-message p-3 mb-3 rounded-3">
+                            <h4 class="mb-3 text-gradient">Chào mừng bạn!</h4>
+                            <p class="mb-2">Tôi là trợ lý ảo của <strong>Trường Đại học Mở Thành phố Hồ Chí Minh</strong>, tôi có thể giúp bạn:</p>
+                            <ul class="mb-3">
+                                <li>Tìm hiểu về ngành học và chỉ tiêu tuyển sinh năm 2025</li>
+                                <li>Tra cứu các phương thức tuyển sinh</li>
+                                <li>Tìm hiểu về điều kiện đăng ký và quy đổi điểm</li>
+                                <li>Tra cứu thông tin về học phí và học bổng</li>
+                            </ul>
+                            <p>Hãy đặt câu hỏi để tôi có thể giúp bạn!</p>
+                            <small class="text-muted">* Thông tin được lấy từ dữ liệu tuyển sinh mới nhất 2025</small>
+                        </div>
+                    </div>
+                    <div class="chat-input p-3 border-top" style="transform-style: preserve-3d; transform: translateZ(var(--depth-2));">
+                        <form id="chat-form" class="d-flex align-items-center gap-2">
+                            <input type="text" id="message-input" class="form-control" placeholder="Nhập câu hỏi của bạn..." style="border-radius: var(--btn-border-radius); box-shadow: var(--shadow-sm);">
+                            <button type="submit" id="send-button" class="btn btn-primary px-4" style="transform-style: preserve-3d; transform: translateZ(var(--depth-2));">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+/* Styles for bot message content */
+.bot-message h4 {
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.bot-message p {
+    margin-bottom: 0.75rem;
+}
+
+.bot-message ul, .bot-message ol {
+    margin-bottom: 1rem;
+    padding-left: 1.5rem;
+}
+
+.bot-message table, .bot-message .data-table {
+    margin-bottom: 1rem;
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.bot-message table td, .bot-message table th,
+.bot-message .data-row {
+    padding: 0.5rem;
+    border: 1px solid #dee2e6;
+}
+
+.bot-message .data-table {
+    display: table;
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+    overflow: hidden;
+}
+
+.bot-message .data-row {
+    display: table-row;
+}
+
+.bot-message .data-label, .bot-message .data-value {
+    display: table-cell;
+    padding: 0.5rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.bot-message .data-label {
+    font-weight: 500;
+    background-color: rgba(115, 103, 240, 0.05);
+}
+
+.bot-message .text-gradient {
+    background: linear-gradient(45deg, #7367f0, #ce9ffc);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.bot-message .text-accent {
+    color: #7367f0;
+    font-weight: bold;
+}
+
+.bot-message .source-info {
+    margin-top: 1rem;
+    color: #6c757d;
+}
+
+.bot-message .content-section {
+    margin-bottom: 1rem;
+}
+
+.bot-message .feature-list li {
+    margin-bottom: 0.5rem;
+}
+
+.bot-message small {
+    font-size: 85%;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Global variables
+let currentSessionId = null;
+let chatHistory = [];
+
+// Initialize the application when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Load chat sessions
+    loadChatSessions();
+    
+    // Set up event listeners
+    document.getElementById('new-chat-button').addEventListener('click', createNewSession);
+    document.getElementById('new-chat-sidebar').addEventListener('click', createNewSession);
+    document.getElementById('clear-button').addEventListener('click', clearChat);
+    document.getElementById('chat-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        sendMessage();
+    });
+    
+    // Set up sample question buttons
+    document.querySelectorAll('.sample-question').forEach(button => {
+        button.addEventListener('click', function() {
+            document.getElementById('message-input').value = this.textContent;
+            sendMessage();
+        });
+    });
+});
+
+// Load chat sessions from the server
+function loadChatSessions() {
+    fetch('/api/sessions')
+        .then(response => response.json())
+        .then(sessions => {
+            const sessionsList = document.getElementById('chat-sessions-list');
+            
+            if (!sessionsList) {
+                console.error("Element with id 'chat-sessions-list' not found");
+                return;
+            }
+            
+            // Clear existing sessions
+            sessionsList.innerHTML = '';
+            
+            // Create or update the no sessions message
+            let noSessionsMessage = document.getElementById('no-sessions-message');
+            
+            // If no sessions message doesn't exist, create it
+            if (!noSessionsMessage) {
+                noSessionsMessage = document.createElement('div');
+                noSessionsMessage.id = 'no-sessions-message';
+                noSessionsMessage.className = 'text-center text-muted py-4';
+                noSessionsMessage.innerHTML = `
+                    <i class="fas fa-comments fa-2x mb-2"></i>
+                    <p>Không có đoạn chat nào</p>
+                `;
+                sessionsList.appendChild(noSessionsMessage);
+            }
+            
+            if (sessions && sessions.length > 0) {
+                // Hide the no sessions message
+                noSessionsMessage.style.display = 'none';
+                
+                // Sort sessions by updated_at (newest first)
+                sessions.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+                
+                // Create session items
+                sessions.forEach(session => {
+                    const sessionItem = document.createElement('div');
+                    sessionItem.className = 'session-item p-2 mb-1';
+                    sessionItem.dataset.id = session.id;
+                    sessionItem.innerHTML = `
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <i class="fas fa-comments me-2 text-muted"></i>
+                                <span>${session.title || 'Đoạn chat mới'}</span>
+                            </div>
+                            <small class="text-muted">${formatDate(session.updated_at)}</small>
+                        </div>
+                    `;
+                    sessionItem.addEventListener('click', () => loadChatSession(session.id));
+                    sessionsList.appendChild(sessionItem);
+                });
+                
+                // Load the most recent session
+                loadChatSession(sessions[0].id);
+            } else {
+                // Show the no sessions message
+                noSessionsMessage.style.display = 'block';
+                createNewSession(); // Create a new session if none exists
+            }
+        })
+        .catch(error => {
+            console.error('Error loading chat sessions:', error);
+        });
+}
+
+// Load a specific chat session
+function loadChatSession(sessionId) {
+    fetch(`/api/sessions/${sessionId}`)
+        .then(response => response.json())
+        .then(data => {
+            // Update global variables
+            currentSessionId = data.session.id;
+            document.getElementById('current-chat-title').innerHTML = `
+                <i class="fas fa-robot me-2"></i>${data.session.title}
+            `;
+            
+            // Update UI to highlight the current session
+            document.querySelectorAll('.session-item').forEach(item => {
+                if (parseInt(item.dataset.id) === currentSessionId) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+            
+            // Clear chat messages
+            const chatMessages = document.getElementById('chat-messages');
+            chatMessages.innerHTML = '';
+            
+            // Add welcome message if no messages
+            if (data.messages.length === 0) {
+                const welcomeMessage = document.createElement('div');
+                welcomeMessage.className = 'message bot-message p-3 mb-3 rounded-3';
+                welcomeMessage.innerHTML = `
+                    <h4 class="mb-3 text-gradient">Chào mừng bạn!</h4>
+                    <p class="mb-2">Tôi là trợ lý ảo của <strong>Trường Đại học Mở Thành phố Hồ Chí Minh</strong>, tôi có thể giúp bạn:</p>
+                    <ul class="mb-3">
+                        <li>Tìm hiểu về ngành học và chỉ tiêu tuyển sinh năm 2025</li>
+                        <li>Tra cứu các phương thức tuyển sinh</li>
+                        <li>Tìm hiểu về điều kiện đăng ký và quy đổi điểm</li>
+                        <li>Tra cứu thông tin về học phí và học bổng</li>
+                    </ul>
+                    <p>Hãy đặt câu hỏi để tôi có thể giúp bạn!</p>
+                    <small class="text-muted">* Thông tin được lấy từ dữ liệu tuyển sinh mới nhất 2025</small>
+                `;
+                chatMessages.appendChild(welcomeMessage);
+            } else {
+                // Add all messages
+                data.messages.forEach(msg => {
+                    addMessage(msg.content, msg.role);
+                });
+                // Scroll to the bottom
+                scrollToBottom();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading chat session:', error);
+        });
+}
+
+// Create a new chat session
+function createNewSession() {
+    fetch('/api/sessions', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(session => {
+        loadChatSessions(); // Reload all sessions
+    })
+    .catch(error => {
+        console.error('Error creating new chat session:', error);
+    });
+}
+
+// Send a message to the AI
+function sendMessage() {
+    const messageInput = document.getElementById('message-input');
+    const userMessage = messageInput.value.trim();
+    
+    if (userMessage === '') return;
+    
+    // Add user message to chat
+    addMessage(userMessage, 'user');
+    messageInput.value = '';
+    
+    // Show typing indicator
+    const typingIndicator = document.createElement('div');
+    typingIndicator.id = 'typing-indicator';
+    typingIndicator.className = 'message bot-message p-3 mb-3 rounded-3';
+    typingIndicator.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+    document.getElementById('chat-messages').appendChild(typingIndicator);
+    scrollToBottom();
+    
+    // Send request to server
+    fetch('/chat', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ message: userMessage })
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Remove typing indicator if it exists
+        const typingIndicator = document.getElementById('typing-indicator');
+        if (typingIndicator) {
+            typingIndicator.remove();
+        }
+        
+        // Add AI response to chat
+        if (data.error) {
+            addMessage(data.error, 'assistant', true);
+        } else {
+            addMessage(data.response, 'assistant');
+        }
+        
+        // Reload sessions to update timestamps
+        loadChatSessions();
+    })
+    .catch(error => {
+        // Remove typing indicator
+        if (document.getElementById('typing-indicator')) {
+            document.getElementById('typing-indicator').remove();
+        }
+        
+        // Show error message
+        addMessage('Đã xảy ra lỗi khi xử lý yêu cầu của bạn. Vui lòng thử lại sau.', 'assistant', true);
+        console.error('Error sending message:', error);
+    });
+}
+
+// Add a message to the chat
+function addMessage(text, sender, isError = false) {
+    const chatMessages = document.getElementById('chat-messages');
+    const messageElement = document.createElement('div');
+    
+    // Set appropriate classes
+    messageElement.className = `message ${sender === 'user' ? 'user-message ms-auto' : 'bot-message'} p-3 mb-3 rounded-3`;
+    if (sender === 'user') {
+        messageElement.style.maxWidth = '80%';
+    } else {
+        messageElement.style.maxWidth = '90%';
+    }
+    
+    // Add error class if needed
+    if (isError) {
+        messageElement.classList.add('error-message');
+    }
+    
+    // Set message content
+    if (sender === 'user') {
+        messageElement.textContent = text;
+    } else {
+        // For AI messages, process and clean up HTML content
+        
+        // 1. Remove markdown code block markers if present
+        let processedText = text;
+        // Remove ```html and ``` markers
+        processedText = processedText.replace(/```html/g, '');
+        processedText = processedText.replace(/```/g, '');
+        
+        // 2. Replace any HTML entity escaping
+        processedText = processedText.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+        
+        // 3. Create a temporary div to ensure HTML is valid
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = processedText;
+        
+        // 4. Check if the content was properly parsed as HTML
+        if (tempDiv.innerHTML === processedText && processedText.includes('<') && processedText.includes('>')) {
+            console.error('HTML parsing failed, falling back to direct assignment');
+            messageElement.innerHTML = processedText;
+        } else {
+            // The HTML was properly parsed, use the parsed content
+            messageElement.innerHTML = tempDiv.innerHTML;
+        }
+        
+        // 5. Add debug information to console
+        console.log('Original text:', text.substring(0, 100) + '...');
+        console.log('Processed text:', processedText.substring(0, 100) + '...');
+    }
+    
+    // Add message to chat
+    chatMessages.appendChild(messageElement);
+    scrollToBottom();
+}
+
+// Clear the current chat
+function clearChat() {
+    if (!confirm('Bạn có chắc chắn muốn xóa tất cả tin nhắn trong đoạn chat này không?')) return;
+    
+    fetch('/clear_chat', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Clear chat messages
+        document.getElementById('chat-messages').innerHTML = '';
+        
+        // Add welcome message
+        const welcomeMessage = document.createElement('div');
+        welcomeMessage.className = 'message bot-message p-3 mb-3 rounded-3';
+        welcomeMessage.innerHTML = `
+            <h4 class="mb-3 text-gradient">Chào mừng bạn!</h4>
+            <p class="mb-2">Tôi là trợ lý ảo của <strong>Trường Đại học Mở Thành phố Hồ Chí Minh</strong>, tôi có thể giúp bạn:</p>
+            <ul class="mb-3">
+                <li>Tìm hiểu về ngành học và chỉ tiêu tuyển sinh năm 2025</li>
+                <li>Tra cứu các phương thức tuyển sinh</li>
+                <li>Tìm hiểu về điều kiện đăng ký và quy đổi điểm</li>
+                <li>Tra cứu thông tin về học phí và học bổng</li>
+            </ul>
+            <p>Hãy đặt câu hỏi để tôi có thể giúp bạn!</p>
+            <small class="text-muted">* Thông tin được lấy từ dữ liệu tuyển sinh mới nhất 2025</small>
+        `;
+        document.getElementById('chat-messages').appendChild(welcomeMessage);
+    })
+    .catch(error => {
+        console.error('Error clearing chat:', error);
+    });
+}
+
+// Utility function to scroll to the bottom of the chat
+function scrollToBottom() {
+    const chatMessages = document.getElementById('chat-messages');
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+// Format date for display
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('vi-VN', { 
+        month: '2-digit', 
+        day: '2-digit',
+        hour: '2-digit', 
+        minute: '2-digit'
+    });
+}
+</script>
+{% endblock %}
