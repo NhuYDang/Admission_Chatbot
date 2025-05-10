@@ -124,8 +124,6 @@ class Worker:
         Bạn là trợ lý AI chuyên nghiệp hỗ trợ tư vấn tuyển sinh cho trường Đại học Mở Thành phố Hồ Chí Minh.
         Bạn có khả năng tìm kiếm và trích xuất thông tin từ tài liệu từ đó đưa ra câu trả lời cho người dùng.
         Nhiệm vụ của bạn là đọc tài liệu sau đây và trích xuất thông tin cụ thể liên quan đến câu hỏi.
-        Dựa trên câu hỏi và thông tin tìm được, trả lời ngắn gọn, chính xác bằng tiếng Việt. Nếu câu hỏi mơ hồ, hỏi lại để làm rõ.
-        Nếu câu hỏi không liên quan đến tư vấn tuyển sinh như những câu chào hỏi, trò chuyện, hãy trả lời một cách thân thiện và vui vẻ.
         
         CÂU HỎI: "{query}"
         
