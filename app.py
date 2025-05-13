@@ -11,35 +11,14 @@ import time
 load_dotenv()
 
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, g
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import DeclarativeBase
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-# Initialize Flask app
-class Base(DeclarativeBase):
-    pass
-
-db = SQLAlchemy(model_class=Base)
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "admission-consultant-secret-key")
 
-# Database configuration
-database_url = os.environ.get("DATABASE_URL")
-if database_url:
-    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
-    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-        "pool_recycle": 300,
-        "pool_pre_ping": True,
-    }
-else:
-    logger.error("DATABASE_URL environment variable not found")
-    app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://neondb_owner:npg_t0jHNzSx7Osg@ep-winter-cherry-a6q473sj.us-west-2.aws.neon.tech/neondb?sslmode=require"
-
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-db.init_app(app)
 
 # Helper function to clean HTML responses
 def clean_html_response(text):
@@ -78,7 +57,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 # Import utilities after app is created
 from utils.pdf_processor import extract_text_from_pdf, chunk_text
 from utils.vector_store_transformers import TransformerVectorStore
-from utils.vector_store import VectorStore
+from utils.vector_store_tfidf import VectorStore
 from utils.gemini_api import generate_response
 from utils.orchestrator import orchestrate_response
 from utils.conversation_handler import ConversationHandler
@@ -87,13 +66,9 @@ import asyncio
 # Dictionary to store file information: key = file_id, value = {filename, content} 
 file_information = {}
 
-# Import models and create tables
-with app.app_context():
-    import models
-    db.create_all()
-
 # vector_store = VectorStore()
 vector_store = TransformerVectorStore()
+
 
 # Initialize conversation handler for detecting and responding to conversational queries
 conversation_handler = ConversationHandler()
@@ -105,6 +80,22 @@ def load_existing_documents():
         return
     
     # Clear existing vector store to avoid duplicate entries
+    # vector_store_path = "vector_store_data/tfidf_store.pkl"
+    vector_store_path = "vector_store_data/transformer_store.pkl"
+    
+    if os.path.exists(vector_store_path):
+        try:
+            if vector_store.load_from_disk(vector_store_path):
+                logger.info(f"Loaded vector store from {vector_store_path}")
+                return
+        except Exception as e:
+            logger.error(f"Failed to load vector store from disk: {e}")
+            logger.info("Falling back to rebuilding vector store from PDF files")
+
+    # Nếu không có pickle hoặc lỗi, thì build lại từ PDF
+        if not os.path.exists(UPLOAD_FOLDER):
+            return
+        
     vector_store.clear()
     global file_information
     file_information = {}  # Reset file information dictionary
@@ -142,137 +133,27 @@ def load_existing_documents():
                 logger.info(f"Extracted {len(chunks)} chunks from {pdf_file}")
             
             # Add chunks to vector store with source information
-            vector_store.add_documents(chunks, file_source=pdf_file)
-            
+            vector_store.add_documents(chunks, file_source=pdf_file)            
             logger.info(f"Processed and loaded {pdf_file} into vector store")
         except Exception as e:
             logger.error(f"Error processing PDF {pdf_file}: {e}")
-
+    try:
+        os.makedirs("vector_store_data", exist_ok=True)
+        vector_store.save_to_disk(vector_store_path)
+        logger.info(f"Saved vector store to {vector_store_path}")
+    except Exception as e:
+        logger.error(f"Failed to save vector store to disk: {e}")
+        
 # Load existing documents on startup
 load_existing_documents()
-
-# Helper function to update database with chat messages
-def save_chat_message(session_id, role, content):
-    """Save a chat message to the database"""
-    try:
-        from models import ChatMessage
-        
-        new_message = ChatMessage(
-            session_id=session_id,
-            role=role,
-            content=content
-        )
-        db.session.add(new_message)
-        db.session.commit()
-        logger.debug(f"Saved {role} message to database, session_id: {session_id}")
-        return True
-    except Exception as e:
-        logger.error(f"Error saving message to database: {e}")
-        return False
-
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
-# Chat sessions API endpoints
-@app.route('/api/sessions', methods=['GET'])
-def get_sessions():
-    """Get all chat sessions for display in sidebar"""
-    try:
-        from models import ChatSession
-        sessions = ChatSession.query.order_by(ChatSession.updated_at.desc()).all()
-        result = []
-        for session in sessions:
-            result.append({
-                'id': session.id,
-                'session_id': session.session_id,
-                'title': session.title or f"Chat {session.id}",
-                'created_at': session.created_at.isoformat(),
-                'updated_at': session.updated_at.isoformat()
-            })
-        return jsonify(result)
-    except Exception as e:
-        logger.error(f"Error getting sessions: {e}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/sessions', methods=['POST'])
-def create_session():
-    """Create a new chat session"""
-    try:
-        from models import ChatSession
-        new_session = ChatSession(
-            session_id=str(uuid.uuid4()),
-            title=f"Chat {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}"
-        )
-        db.session.add(new_session)
-        db.session.commit()
-        
-        # Clear session chat history for new chat
-        session['chat_history'] = []
-        session['current_session_id'] = new_session.id
-        
-        return jsonify({
-            'id': new_session.id,
-            'session_id': new_session.session_id,
-            'title': new_session.title,
-            'created_at': new_session.created_at.isoformat(),
-            'updated_at': new_session.updated_at.isoformat()
-        })
-    except Exception as e:
-        logger.error(f"Error creating session: {e}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/sessions/<int:session_id>', methods=['GET'])
-def get_session(session_id):
-    """Get a specific chat session with messages"""
-    try:
-        from models import ChatSession, ChatMessage
-        chat_session = ChatSession.query.get_or_404(session_id)
-        messages = ChatMessage.query.filter_by(session_id=session_id).order_by(ChatMessage.created_at).all()
-        
-        # Set current session in flask session
-        session['current_session_id'] = session_id
-        
-        # Build chat history for this session
-        chat_history = []
-        for msg in messages:
-            chat_history.append({
-                'role': msg.role,
-                'content': msg.content
-            })
-        
-        # Store in session for continuation
-        session['chat_history'] = chat_history
-        
-        # Format messages for response, cleaning HTML content in assistant messages
-        formatted_messages = []
-        for msg in messages:
-            content = msg.content
-            # Clean HTML in assistant messages
-            if msg.role == 'assistant':
-                content = clean_html_response(content)
-                
-            formatted_messages.append({
-                'id': msg.id,
-                'role': msg.role,
-                'content': content,
-                'created_at': msg.created_at.isoformat()
-            })
-        
-        return jsonify({
-            'session': {
-                'id': chat_session.id,
-                'session_id': chat_session.session_id,
-                'title': chat_session.title,
-                'created_at': chat_session.created_at.isoformat(),
-                'updated_at': chat_session.updated_at.isoformat()
-            },
-            'messages': formatted_messages
-        })
-    except Exception as e:
-        logger.error(f"Error getting session: {e}")
-        return jsonify({'error': str(e)}), 500
+@app.route('/api/current_chat_history', methods=['GET'])
+def get_current_chat_history():
+    return jsonify(session.get('chat_history', []))
 
 @app.route('/chat', methods=['POST'])
 def chat():
@@ -284,50 +165,33 @@ def chat():
             return jsonify({'error': 'No message provided'}), 400
         
         # Get chat history from session
-        chat_history = session.get('chat_history', [])
+        if 'chat_history' not in session:
+            session['chat_history'] = []
+
+        chat_history = session['chat_history']
         
         # Check if the query is conversational (greeting, small talk, etc.)
         conversational_response = conversation_handler.get_response(user_query)
         if conversational_response:
             logger.info(f"Detected conversational query, responding with predefined response")
             
-            # Get current session ID or create a new one
-            current_session_id = session.get('current_session_id')
-            if not current_session_id:
-                # Create a new session if none exists
-                from models import ChatSession
-                new_session = ChatSession(
-                    session_id=str(uuid.uuid4()),
-                    title=f"Chat {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}"
-                )
-                db.session.add(new_session)
-                db.session.commit()
-                current_session_id = new_session.id
-                session['current_session_id'] = current_session_id
+            # # Update chat history
+            # chat_history.append({"role": "user", "content": user_query})
+            # chat_history.append({"role": "assistant", "content": conversational_response})
             
-            # Update chat history
-            chat_history.append({"role": "user", "content": user_query})
-            chat_history.append({"role": "assistant", "content": conversational_response})
+            if not any(msg["content"] == user_query and msg["role"] == "user" for msg in chat_history):
+                chat_history.append({"role": "user", "content": user_query})
+            if not any(msg["content"] == conversational_response and msg["role"] == "assistant" for msg in chat_history):
+                chat_history.append({"role": "assistant", "content": conversational_response})
             
-            # Save messages to database
-            save_chat_message(current_session_id, "user", user_query)
-            save_chat_message(current_session_id, "assistant", conversational_response)
-            
-            # Update the session updated_at timestamp
-            from models import ChatSession
-            chat_session = ChatSession.query.get(current_session_id)
-            if chat_session:
-                chat_session.updated_at = datetime.datetime.utcnow()
-                db.session.commit()
-            
-            # Limit history length to prevent session from getting too large
             if len(chat_history) > 20:
                 chat_history = chat_history[-20:]
-            
+
             session['chat_history'] = chat_history
             
             return jsonify({
-                'response': conversational_response
+                'response': conversational_response,
+                'chat_history': chat_history
             })
         
         # Not a conversational query, proceed with retrieval-based response
@@ -486,44 +350,27 @@ def chat():
         
         # Clean the response HTML to ensure proper rendering
         response = clean_html_response(response)
-        
-        # Get current session ID
-        current_session_id = session.get('current_session_id')
-        if not current_session_id:
-            # Create a new session if none exists
-            from models import ChatSession
-            new_session = ChatSession(
-                session_id=str(uuid.uuid4()),
-                title=f"Chat {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}"
-            )
-            db.session.add(new_session)
-            db.session.commit()
-            current_session_id = new_session.id
-            session['current_session_id'] = current_session_id
-        
-        # Update chat history
-        chat_history.append({"role": "user", "content": user_query})
-        chat_history.append({"role": "assistant", "content": response})
-        
-        # Save messages to database
-        save_chat_message(current_session_id, "user", user_query)
-        save_chat_message(current_session_id, "assistant", response)
-        
-        # Update the session updated_at timestamp
-        from models import ChatSession
-        chat_session = ChatSession.query.get(current_session_id)
-        if chat_session:
-            chat_session.updated_at = datetime.datetime.utcnow()
-            db.session.commit()
+
+        # # Update chat history
+        # chat_history.append({"role": "user", "content": user_query})
+        # chat_history.append({"role": "assistant", "content": response})
+
+        # Only append if not already in history
+        if not any(msg["content"] == user_query and msg["role"] == "user" for msg in chat_history):
+            chat_history.append({"role": "user", "content": user_query})
+        if not any(msg["content"] == response and msg["role"] == "assistant" for msg in chat_history):
+            chat_history.append({"role": "assistant", "content": response})
         
         # Limit history length to prevent session from getting too large
         if len(chat_history) > 20:
             chat_history = chat_history[-20:]
-        
+
         session['chat_history'] = chat_history
-        
+        logger.debug(f"Returning chat history: {chat_history}")  # Debug log
+
         return jsonify({
-            'response': response
+            'response': response,
+            'chat_history': chat_history
         })
     except Exception as e:
         logger.error(f"Error in chat endpoint: {str(e)}")
@@ -533,189 +380,7 @@ def chat():
 def clear_chat():
     # Clear chat history from flask session
     session.pop('chat_history', None)
-    
-    # Clear messages from database for current session
-    current_session_id = session.get('current_session_id')
-    if current_session_id:
-        try:
-            from models import ChatMessage
-            # Delete all messages for this session
-            ChatMessage.query.filter_by(session_id=current_session_id).delete()
-            db.session.commit()
-            logger.info(f"Cleared all messages for session {current_session_id}")
-        except Exception as e:
-            logger.error(f"Error clearing messages from database: {e}")
-    
-    return jsonify({'status': 'success'})
-
-
-@app.route('/api/embedding/benchmark', methods=['POST'])
-def benchmark_embeddings():
-    """API endpoint to benchmark different embedding methods with actual evaluation metrics"""
-    try:
-        data = request.json
-        test_queries = data.get('queries', [])
-        current_embedding = data.get('current_embedding', 'tfidf')
-        timing_iterations = data.get('timing_iterations', 3)  # Default to 3 iterations for timing
-        
-        if not test_queries:
-            return jsonify({'error': 'No test queries provided'}), 400
-        
-        # Create temporary vector stores for evaluation
-        tfidf_store = VectorStoreFactory.create_vector_store(store_type=VectorStoreFactory.TFIDF)
-        transformer_store = VectorStoreFactory.create_vector_store(store_type=VectorStoreFactory.TRANSFORMER)
-        
-        # Load the same documents into both stores
-        # Just load a subset of documents to speed up the benchmark process
-        for pdf_file in os.listdir(UPLOAD_FOLDER)[:5]:  # Limit to first 5 PDFs for faster testing
-            if pdf_file.endswith('.pdf'):
-                filepath = os.path.join(UPLOAD_FOLDER, pdf_file)
-                try:
-                    text = extract_text_from_pdf(filepath)
-                    chunks = chunk_text(text, file_source=pdf_file)
-                    
-                    # Add to both vector stores
-                    tfidf_store.add_documents(chunks, file_source=pdf_file)
-                    transformer_store.add_documents(chunks, file_source=pdf_file)
-                except Exception as e:
-                    logger.error(f"Error loading {pdf_file} for benchmark: {e}")
-        
-        # Results dictionary to store metrics
-        results = {
-            'tfidf': {
-                'precision': 0,
-                'recall': 0,
-                'f1_score': 0,
-                'response_time': 0
-            },
-            'transformer': {
-                'precision': 0,
-                'recall': 0, 
-                'f1_score': 0,
-                'response_time': 0
-            }
-        }
-        
-        # Perform benchmark for each vector store type
-        for store_type in ['tfidf', 'transformer']:
-            store = tfidf_store if store_type == 'tfidf' else transformer_store
-            
-            # Track metrics across all test queries
-            total_precision = 0
-            total_recall = 0
-            total_f1 = 0
-            total_time = 0
-            
-            for query in test_queries:
-                # For timing accuracy, run the query multiple times and take the average
-                query_times = []
-                precision_values = []
-                
-                for _ in range(timing_iterations):
-                    # Measure response time
-                    start_time = datetime.datetime.now()
-                    
-                    # Get relevant documents with a fixed number of results
-                    relevant_docs = store.similarity_search(query, k=5, threshold=0.001)
-                    
-                    # Simulate full processing time including post-processing that would happen in a real query
-                    # This better represents the actual user experience time
-                    processed_docs = []
-                    for doc in relevant_docs:
-                        # Add proper processing time simulation with some real work
-                        # Handle different document formats that might be returned from different vector stores
-                        if hasattr(doc, 'page_content'):
-                            # This is a Langchain document format
-                            processed_content = doc.page_content
-                            source = doc.metadata.get('source', 'Unknown') if hasattr(doc, 'metadata') else 'Unknown'
-                        elif isinstance(doc, str):
-                            # This is a plain string format
-                            processed_content = doc
-                            # Extract source if string has format like "SOURCE_FILE:filename.pdf\nContent..."
-                            if doc.startswith("SOURCE_FILE:"):
-                                parts = doc.split("\n", 1)
-                                source = parts[0].replace("SOURCE_FILE:", "").strip()
-                                processed_content = parts[1] if len(parts) > 1 else doc
-                            else:
-                                source = 'Unknown'
-                        elif isinstance(doc, dict):
-                            # This is a dictionary format
-                            processed_content = doc.get('content', str(doc))
-                            source = doc.get('source', 'Unknown')
-                        else:
-                            # Fallback for any other format
-                            processed_content = str(doc)
-                            source = 'Unknown'
-                        
-                        # Perform actual text processing to simulate real workload
-                        # Split into sentences, count words, find keywords - these operations take time
-                        sentences = processed_content.split('.')
-                        word_count = len(processed_content.split())
-                        keywords = [word for word in query.lower().split() if word in processed_content.lower()]
-                        
-                        # Create a processed document with all extracted information
-                        processed_docs.append({
-                            'content': processed_content,
-                            'source': source,
-                            'sentences': len(sentences),
-                            'word_count': word_count,
-                            'keyword_matches': len(keywords)
-                        })
-                    
-                    # Calculate response time including processing
-                    end_time = datetime.datetime.now()
-                    iteration_time = (end_time - start_time).total_seconds()
-                    query_times.append(iteration_time)
-                    
-                    # Log the timing for debugging
-                    logger.debug(f"Query timing for {store_type}, iteration {_+1}: {iteration_time:.4f}s")
-                    
-                    # Calculate precision for this iteration
-                    precision = calculate_relevance_score(query, relevant_docs)
-                    precision_values.append(precision)
-                    
-                    # Add a small delay between iterations to prevent CPU caching effects
-                    # and to give more consistent timing results
-                    time.sleep(0.1)  # 100ms delay
-                
-                # Use the average time from all iterations for more accurate timing
-                avg_query_time = sum(query_times) / len(query_times)
-                total_time += avg_query_time
-                
-                # Use the average precision from all iterations
-                avg_precision = sum(precision_values) / len(precision_values)
-                total_precision += avg_precision
-                
-                # For this demo, we'll use simplified metrics since we don't have labeled ground truth
-                # In a real system, you would compare against known relevant documents
-                # Here we'll set recall equal to precision as an approximation
-                recall = avg_precision
-                total_recall += recall
-                
-                # Calculate F1 score
-                if avg_precision + recall > 0:
-                    f1 = 2 * (avg_precision * recall) / (avg_precision + recall)
-                else:
-                    f1 = 0
-                    
-                total_f1 += f1
-            
-            # Calculate averages
-            if len(test_queries) > 0:
-                results[store_type]['precision'] = round((total_precision / len(test_queries)) * 100)
-                results[store_type]['recall'] = round((total_recall / len(test_queries)) * 100)
-                results[store_type]['f1_score'] = round((total_f1 / len(test_queries)) * 100)
-                results[store_type]['response_time'] = round(total_time / len(test_queries), 2)
-        
-        # Return only the requested embedding type if specified
-        if current_embedding in results:
-            return jsonify({'results': results[current_embedding], 'total_queries': len(test_queries)})
-        else:
-            return jsonify({'results': results, 'total_queries': len(test_queries)})
-            
-    except Exception as e:
-        logger.error(f"Error in benchmark_embeddings: {e}")
-        return jsonify({'error': f'Error: {str(e)}'}), 500
+    return jsonify({'stat us': 'success'})
 
 def calculate_relevance_score(query, documents):
     """Calculate a relevance score for documents based on keyword matching with the query

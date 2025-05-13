@@ -4,16 +4,18 @@
 <div class="row g-4">
     <!-- Left sidebar: Chat sessions -->
     <div class="col-lg-3">
-        <div class="card mb-4" style="transform-style: preserve-3d; transform: translateZ(var(--depth-3));">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0 fs-6"><i class="fas fa-history me-2"></i>Lịch sử</h5>
-                <button id="new-chat-sidebar" class="btn btn-sm btn-accent" style="transform: translateZ(var(--depth-1));">
-                    <i class="fas fa-plus"></i>
-                </button>
+        <div class="card" style="transform-style: preserve-3d; transform: translateZ(var(--depth-3));">
+            <div class="card-header">
+                <h5 class="mb-0 fs-6"><i class="fas fa-lightbulb me-2"></i>Thông tin liên hệ</h5>
             </div>
-            <div class="card-body p-2" style="max-height: 400px; overflow-y: auto;">
-                <div id="chat-sessions-list" class="d-flex flex-column gap-2">
-                    <!-- Chat sessions will be populated here dynamically -->
+            <div class="card-body p-2">
+                <div class="d-grid gap-2">
+                    <a href="https://tuyensinh.ou.edu.vn/" target="_blank" class="redirect-link" style="transform-style: preserve-3d; transform: translateZ(var(--depth-2)); transition: transform 0.3s ease;">🌐 Trang web tuyển sinh</a>
+                    <a href="https://www.oucommunity.dev/" target="_blank" class="redirect-link" style="transform-style: preserve-3d; transform: translateZ(var(--depth-2)); transition: transform 0.3s ease;">📔 Sổ tay tuyển sinh OU</a>
+                    <a href="https://www.facebook.com/tuyensinh.ou.edu.vn" target="_blank" class="redirect-link" style="transform-style: preserve-3d; transform: translateZ(var(--depth-2)); transition: transform 0.3s ease;">⚡ Facebook</a>
+                    <a href="https://www.tiktok.com/@tuyensinh.hcmcou" target="_blank" class="redirect-link" style="transform-style: preserve-3d; transform: translateZ(var(--depth-2)); transition: transform 0.3s ease;">🎵 Tiktok</a>
+                    <span><strong>📧 Email: </strong><a href="mailto:tuyensinh@ou.edu.vn target="_blank class="redirect-link" style="transform-style: preserve-3d; transform: translateZ(var(--depth-2)); transition: transform 0.3s ease;">tuyensinh@ou.edu.vn</a></span>        
+                    <span><strong>📞 Hotline: </strong>1800585884</span>
                 </div>
             </div>
         </div>
@@ -28,6 +30,7 @@
                     <button class="btn btn-sm text-start sample-question" style="transform-style: preserve-3d; transform: translateZ(var(--depth-2)); transition: transform 0.3s ease;">Các phương thức tuyển sinh của trường?</button>
                     <button class="btn btn-sm text-start sample-question" style="transform-style: preserve-3d; transform: translateZ(var(--depth-2)); transition: transform 0.3s ease;">Điểm chuẩn ngành Công nghệ thông tin?</button>
                     <button class="btn btn-sm text-start sample-question" style="transform-style: preserve-3d; transform: translateZ(var(--depth-2)); transition: transform 0.3s ease;">Học phí ngành Ngôn ngữ Anh năm 2025 là bao nhiêu?</button>
+                    <button class="btn btn-sm text-start sample-question" style="transform-style: preserve-3d; transform: translateZ(var(--depth-2)); transition: transform 0.3s ease;">Cơ hội việc làm ngành Kiểm toán?</button>
                 </div>
             </div>
         </div>
@@ -157,23 +160,30 @@
 .bot-message small {
     font-size: 85%;
 }
+
+.d-grid a {
+    text-decoration: none;
+}
+
+.redirect-link:hover {
+    color: #ff5733;
+}
 </style>
 {% endblock %}
 
 {% block scripts %}
 <script>
 // Global variables
-let currentSessionId = null;
 let chatHistory = [];
 
 // Initialize the application when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     // Load chat sessions
-    loadChatSessions();
+    loadChatHistory();
     
     // Set up event listeners
-    document.getElementById('new-chat-button').addEventListener('click', createNewSession);
-    document.getElementById('new-chat-sidebar').addEventListener('click', createNewSession);
+    // document.getElementById('new-chat-button').addEventListener('click', createNewSession);
+    // document.getElementById('new-chat-sidebar').addEventListener('click', createNewSession);
     document.getElementById('clear-button').addEventListener('click', clearChat);
     document.getElementById('chat-form').addEventListener('submit', function(e) {
         e.preventDefault();
@@ -189,100 +199,17 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Load chat sessions from the server
-function loadChatSessions() {
-    fetch('/api/sessions')
+// Load chat history from the server
+function loadChatHistory() {
+    fetch('/api/current_chat_history')
         .then(response => response.json())
-        .then(sessions => {
-            const sessionsList = document.getElementById('chat-sessions-list');
-            
-            if (!sessionsList) {
-                console.error("Element with id 'chat-sessions-list' not found");
-                return;
-            }
-            
-            // Clear existing sessions
-            sessionsList.innerHTML = '';
-            
-            // Create or update the no sessions message
-            let noSessionsMessage = document.getElementById('no-sessions-message');
-            
-            // If no sessions message doesn't exist, create it
-            if (!noSessionsMessage) {
-                noSessionsMessage = document.createElement('div');
-                noSessionsMessage.id = 'no-sessions-message';
-                noSessionsMessage.className = 'text-center text-muted py-4';
-                noSessionsMessage.innerHTML = `
-                    <i class="fas fa-comments fa-2x mb-2"></i>
-                    <p>Không có đoạn chat nào</p>
-                `;
-                sessionsList.appendChild(noSessionsMessage);
-            }
-            
-            if (sessions && sessions.length > 0) {
-                // Hide the no sessions message
-                noSessionsMessage.style.display = 'none';
-                
-                // Sort sessions by updated_at (newest first)
-                sessions.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
-                
-                // Create session items
-                sessions.forEach(session => {
-                    const sessionItem = document.createElement('div');
-                    sessionItem.className = 'session-item p-2 mb-1';
-                    sessionItem.dataset.id = session.id;
-                    sessionItem.innerHTML = `
-                        <div class="d-flex align-items-center justify-content-between">
-                            <div>
-                                <i class="fas fa-comments me-2 text-muted"></i>
-                                <span>${session.title || 'Đoạn chat mới'}</span>
-                            </div>
-                            <small class="text-muted">${formatDate(session.updated_at)}</small>
-                        </div>
-                    `;
-                    sessionItem.addEventListener('click', () => loadChatSession(session.id));
-                    sessionsList.appendChild(sessionItem);
-                });
-                
-                // Load the most recent session
-                loadChatSession(sessions[0].id);
-            } else {
-                // Show the no sessions message
-                noSessionsMessage.style.display = 'block';
-                createNewSession(); // Create a new session if none exists
-            }
-        })
-        .catch(error => {
-            console.error('Error loading chat sessions:', error);
-        });
-}
-
-// Load a specific chat session
-function loadChatSession(sessionId) {
-    fetch(`/api/sessions/${sessionId}`)
-        .then(response => response.json())
-        .then(data => {
-            // Update global variables
-            currentSessionId = data.session.id;
-            document.getElementById('current-chat-title').innerHTML = `
-                <i class="fas fa-robot me-2"></i>${data.session.title}
-            `;
-            
-            // Update UI to highlight the current session
-            document.querySelectorAll('.session-item').forEach(item => {
-                if (parseInt(item.dataset.id) === currentSessionId) {
-                    item.classList.add('active');
-                } else {
-                    item.classList.remove('active');
-                }
-            });
-            
-            // Clear chat messages
+        .then(history => {
+            chatHistory = history;
             const chatMessages = document.getElementById('chat-messages');
             chatMessages.innerHTML = '';
             
-            // Add welcome message if no messages
-            if (data.messages.length === 0) {
+            // Add welcome message if history is empty
+            if (chatHistory.length === 0) {
                 const welcomeMessage = document.createElement('div');
                 welcomeMessage.className = 'message bot-message p-3 mb-3 rounded-3';
                 welcomeMessage.innerHTML = `
@@ -299,34 +226,16 @@ function loadChatSession(sessionId) {
                 `;
                 chatMessages.appendChild(welcomeMessage);
             } else {
-                // Add all messages
-                data.messages.forEach(msg => {
+                // Add all messages from history
+                chatHistory.forEach(msg => {
                     addMessage(msg.content, msg.role);
                 });
-                // Scroll to the bottom
-                scrollToBottom();
             }
+            scrollToBottom();
         })
         .catch(error => {
-            console.error('Error loading chat session:', error);
+            console.error('Error loading chat history:', error);
         });
-}
-
-// Create a new chat session
-function createNewSession() {
-    fetch('/api/sessions', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(session => {
-        loadChatSessions(); // Reload all sessions
-    })
-    .catch(error => {
-        console.error('Error creating new chat session:', error);
-    });
 }
 
 // Send a message to the AI
@@ -363,17 +272,26 @@ function sendMessage() {
         if (typingIndicator) {
             typingIndicator.remove();
         }
-        
-        // Add AI response to chat
+
+        // Check for errors 
         if (data.error) {
             addMessage(data.error, 'assistant', true);
-        } else {
-            addMessage(data.response, 'assistant');
+            scrollToBottom();
+            return;
         }
-        
-        // Reload sessions to update timestamps
-        loadChatSessions();
+
+        // Update chat history
+        if (data.chat_history) {
+            chatHistory = data.chat_history;
+            const chatMessages = document.getElementById('chat-messages');
+            chatMessages.innerHTML = ''; // Clear current chat
+            chatHistory.forEach(msg => { 
+                addMessage(msg.content, msg.role);
+            });
+        }
+        scrollToBottom();
     })
+
     .catch(error => {
         // Remove typing indicator
         if (document.getElementById('typing-indicator')) {
@@ -383,6 +301,9 @@ function sendMessage() {
         // Show error message
         addMessage('Đã xảy ra lỗi khi xử lý yêu cầu của bạn. Vui lòng thử lại sau.', 'assistant', true);
         console.error('Error sending message:', error);
+    }).finally(() => {
+        // Clear input after sending
+        messageInput.value = '';
     });
 }
 

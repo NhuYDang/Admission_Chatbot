@@ -66,36 +66,31 @@ def prepare_vietnamese_context(context):
         'cógiá': 'có giá',
         'trịtới': 'trị tới',
         'mônxét': 'môn xét',
-        'tuyển': 'tuyển',
-        '5500': '5500 ',
-        '34': '34 ',
-        '17': '17 ',
     }
     
     for old, new in replacements.items():
         context = context.replace(old, new)
     
-    # Better formatting with section headers
-    # Identify section headers (numbers followed by dot and capital letters)
+    # Nhận diện tiêu đề section (số theo sau bởi dấu chấm và chữ cái in hoa)
     context = re.sub(r'(\d+\.)([A-ZĐÁÀẢÃẠÂẤẦẨẪẬĂẮẰẲẴẶÉÈẺẼẸÊẾỀỂỄỆÍÌỈĨỊÓÒỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÚÙỦŨỤƯỨỪỬỮỰÝỲỶỸỴ])', r'\n\n\1 \2', context)
     
-    # Make sure there's a period at the end of each sentence
+    # Đảm bảo có dấu chấm ở cuối mỗi câu
     context = re.sub(r'([^.!?\s])\s+([A-Z])', r'\1. \2', context)
     
-    # Better paragraph and section formatting
-    context = re.sub(r'([.?!])\s+', r'\1\n', context)  # New line after each sentence
-    context = re.sub(r'\n{3,}', '\n\n', context)  # Replace excessive newlines
+    # Định dạng đoạn văn và section tốt hơn    
+    context = re.sub(r'([.?!])\s+', r'\1\n', context)  # Xuống dòng sau mỗi câu
+    context = re.sub(r'\n{3,}', '\n\n', context)  # Thay thế các dòng trống
     
-    # Structure important section headers for clarity
+    # Cấu trúc các tiêu đề phần quan trọng cho rõ ràng
     important_sections = ['THÔNG TIN TUYỂN SINH', 'Chỉ tiêu', 'Phương thức', 'Điều kiện', 'Hồ sơ', 'Thời gian']
     
     for section in important_sections:
         context = context.replace(section, f'\n\n### {section.upper()} ###\n')
     
     # Final cleanup
-    context = re.sub(r'\s+', ' ', context)  # Normalize whitespace
-    context = re.sub(r'\n\s+', '\n', context)  # Clean up spaces at line beginnings
-    context = re.sub(r'\n{3,}', '\n\n', context)  # Limit consecutive newlines to 2
+    context = re.sub(r'\s+', ' ', context)  # Chuẩn hóa khoảng trắng
+    context = re.sub(r'\n\s+', '\n', context)  #  Xóa khoảng trắng ở đầu dòng
+    context = re.sub(r'\n{3,}', '\n\n', context)  # Giới hạn các dòng trống liên tiếp thành 2
     
     return context
 
@@ -122,20 +117,20 @@ class GeminiAgent:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={self.api_key}"
         headers = {"Content-Type": "application/json"}
         
-        # Add retry logic for API calls
+        # Thử lại cho các cuộc gọi API
         max_retries = 3
         retry_delay = 2
         
         for attempt in range(max_retries):
             try:
                 response = requests.post(url, headers=headers, data=json.dumps(payload))
-                response.raise_for_status()  # Raise an exception for 4XX and 5XX responses
+                response.raise_for_status()   # Gọi ngoại lệ cho các phản hồi 4XX và 5XX
                 return response.json()
             except requests.exceptions.RequestException as e:
                 logger.warning(f"API call attempt {attempt+1} failed: {e}")
                 if attempt < max_retries - 1:
                     time.sleep(retry_delay)
-                    retry_delay *= 2  # Exponential backoff
+                    retry_delay *= 2  # Tăng thời gian chờ giữa các lần thử theo cấp số nhân
                 else:
                     raise
     
@@ -165,8 +160,11 @@ class GeminiAgent:
         self.last_actions[action_type] = action
         return action
     
+    
     def _analyze_query(self, user_query):
-        """Analyze the user query to determine the information needed"""
+        """
+        Phân tích câu truy vấn cua người dùng để xác định chủ đề, từ khóa và loại file PDF phù hợp
+        """
         # System prompt for query analysis
         analysis_prompt = f"""
         Bạn là một trợ lý phân tích câu hỏi. Hãy phân tích câu hỏi sau về TUYỂN SINH và xác định:
@@ -202,7 +200,7 @@ class GeminiAgent:
             if not analysis_text:
                 return None
                 
-            # Try to extract JSON from the response
+            # Trích xuất JSON từ phản hồi
             json_pattern = r'\{[\s\S]*\}'
             match = re.search(json_pattern, analysis_text)
             
@@ -215,7 +213,7 @@ class GeminiAgent:
                 except json.JSONDecodeError:
                     logger.error(f"Failed to parse JSON from analysis response: {json_str}")
                     
-            # If JSON extraction fails, use regex to extract key information
+            # Nếu trích xuất JSON thất bại, sử dụng regex để trích xuất thông tin chính
             topic_match = re.search(r'chủ[\s_]đề[^:]*:\s*([^\n,\.]+)', analysis_text, re.IGNORECASE)
             keywords_match = re.search(r'từ[\s_]khóa[^:]*:\s*([^\n\.]+)', analysis_text, re.IGNORECASE)
             files_match = re.search(r'file[\s_]ưu[\s_]tiên[^:]*:\s*([^\n\.]+)', analysis_text, re.IGNORECASE)
@@ -234,8 +232,10 @@ class GeminiAgent:
             return None
     
     def _determine_file_priority(self, query_analysis):
-        """Determine the priority of files to search based on query analysis"""
-        # Default priority if analysis fails
+        """
+        Xác định thứ tự ưu tiên của các tệp để tìm kiếm dựa trên phân tích câu truy vấn
+        """
+        # Mặc định file ưu tiên cho các tệp nếu như phân tích truy vấn thất bại
         default_priority = [
             "thong_tin_tuyen_sinh_2025.pdf",
             "thong_tin_tuyen_sinh_2024.pdf",
@@ -457,6 +457,7 @@ class GeminiAgent:
             processed_context = processed_context[:28000] + "\n\n...(truncated for length)..."
         
         # Create the execution prompt
+        
         execution_prompt = f"""
         Bạn là trợ lý tư vấn tuyển sinh thông minh của trường Đại học Mở Thành phố Hồ Chí Minh. Bạn đang thực hiện nhiệm vụ trả lời câu hỏi sau đây:
         
@@ -674,6 +675,7 @@ class GeminiAgent:
             logger.error(f"Error improving answer: {e}")
             return initial_answer
 
+
 def generate_response(user_query, context, chat_history=None):
     """
     Generate a response using Google's Gemini API with agent-based approach
@@ -722,28 +724,29 @@ def generate_response(user_query, context, chat_history=None):
                 logger.error(f"Error parsing document source: {e}")
                 processed_docs.append(doc)  # Use original if any error
                 file_sources.append(None)  # No source for this document
-        
-        # Step 1: Search and extract information from documents
+
+        # Search and extract information from documents
         prioritized_docs, prioritized_sources, query_analysis = agent.search_and_extract(
             user_query, processed_docs, file_sources
         )
         
-        # Step 2: Formulate a task plan
+        # Formulate a task plan
         task_plan = agent.formulate_task_plan(
             user_query, prioritized_docs, prioritized_sources, query_analysis
         )
+
         
-        # Step 3: Execute the plan to generate an initial answer
+        # Execute the plan to generate an initial answer
         initial_answer = agent.execute_plan(
             task_plan, user_query, prioritized_docs, prioritized_sources
         )
         
-        # Step 4: Reflect on the answer and identify improvements
+        # Reflect on the answer and identify improvements
         reflection = agent.reflect_and_improve(
             user_query, initial_answer, prioritized_sources
         )
         
-        # Step 5: Improve the answer based on reflection
+        # Improve the answer based on reflection
         final_answer = agent.improve_answer(
             user_query, initial_answer, reflection, prioritized_docs, prioritized_sources
         )

@@ -1,6 +1,8 @@
 import numpy as np
 import logging
 import re
+import os
+import pickle
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -19,6 +21,34 @@ class VectorStore:
         self.file_categories = {}  # Categorization of files by type
         self.vectorizer = TfidfVectorizer()
         self.vectors = None
+
+    def save_to_disk(self, filepath):
+        data = {
+            "documents": self.documents,
+            "file_sources": self.file_sources,
+            "file_indices": self.file_indices,
+            "file_categories": self.file_categories,
+            "vectorizer": self.vectorizer,
+            "vectors": self.vectors,
+    }
+        
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        with open(filepath, "wb") as f:
+            pickle.dump(data, f)
+
+    def load_from_disk(self, filepath):
+        if not os.path.exists(filepath):
+            return False
+        with open(filepath, "rb") as f:
+            data = pickle.load(f)
+        self.documents = data["documents"]
+        self.file_sources = data["file_sources"]
+        self.file_indices = data["file_indices"]
+        self.file_categories = data["file_categories"]
+        self.vectorizer = data["vectorizer"]
+        self.vectors = data["vectors"]
+        return True
+
         
     def clear(self):
         """

@@ -22,7 +22,6 @@ def extract_text_from_pdf(pdf_path):
                 page = reader.pages[page_num]
                 text += page.extract_text() + "\n"
         
-        # Clean text
         text = clean_text(text)
         
         if not text.strip():
@@ -36,8 +35,8 @@ def extract_text_from_pdf(pdf_path):
 
 def clean_text(text):
     """
-    Clean extracted text by removing extra whitespace while preserving Unicode characters
-    Specific improvements for Vietnamese text formatting
+    Làm sạch văn bản được trích xuất bằng cách loại bỏ khoảng trắng thừa trong khi giữ nguyên các ký tự Unicode
+    Các cải tiến cụ thể cho định dạng văn bản tiếng Việt
     
     Args:
         text (str): Text to clean
@@ -45,56 +44,53 @@ def clean_text(text):
     Returns:
         str: Cleaned text
     """
-    # Log the original text encoding
+    # Ghi log ăn bản gốc
     logger.debug(f"Original text sample (first 100 chars): {text[:100]}")
     
-    # Preserve newlines for paragraph structure before other cleaning
+    # Giữ nguyên các ký tự xuống dòng để duy trì cấu trúc đoạn văn trước khi thực hiện các bước làm sạch khác
     text = re.sub(r'\r\n', '\n', text)  # Normalize line endings
     
-    # Replace multiple spaces with a single space
+    # Thay thế nhiều khoảng trắng bằng một khoảng trắng duy nhất
     text = re.sub(r'[ \t]+', ' ', text)
     
-    # Remove non-printable characters while preserving Unicode/Vietnamese characters
+    # Loại bỏ các ký tự không in được trong khi giữ nguyên các ký tự Unicode/tiếng Việt
     text = re.sub(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]', '', text)
     
-    # Handle common issues with Vietnamese text from PDFs
-    
-    # Specific pattern for digit separation in Vietnamese PDFs (e.g., "24.0" might appear as "24. 0")
+    # Xử lý patterns đặc biệt cho việc tách số trong PDF tiếng Việt (ví dụ: "24.0" có thể xuất hiện dưới dạng "24. 0")
     text = re.sub(r'(\d+)\s*\.\s*(\d+)', r'\1.\2', text)
     
-    # Fix year ranges that might be separated
+    # Sửa các khoảng năm có thể bị tách rời
     text = re.sub(r'(\d{4})\s*-\s*(\d{4})', r'\1-\2', text)
     
-    # Fix year ranges with Vietnamese dash
+    # Sửa các khoảng năm với dấu gạch ngang tiếng Việt
     text = re.sub(r'(\d{4})\s*–\s*(\d{4})', r'\1-\2', text)
     
-    # Add spaces between Vietnamese words that are incorrectly merged
-    # Common Vietnamese words patterns (add more as needed)
+    # Các mẫu từ tiếng Việt phổ biến
     common_prefixes = ['Trường', 'Sinh', 'Học', 'Đại', 'Thí', 'Tuyển', 'Ngành', 'Chương', 'Khoa', 
                     'Phòng', 'Giáo', 'Đào', 'Tạo', 'Viện', 'Bằng', 'Cấp', 'Năm', 'Điểm', 'Chuẩn',
                     'Quản', 'Trị', 'Kinh', 'Doanh', 'Phương', 'Thức', 'Xét', 'Tuyển']
     
-    # Insert space before capitalized words in the middle of text
+    # Chèn khoảng trắng trước các từ viết hoa ở giữa văn bản
     for prefix in common_prefixes:
         pattern = f'([a-z\\s])({prefix})'
         text = re.sub(pattern, r'\1 \2', text)
     
-    # Add space after punctuation if there isn't one
+    # Thêm khoảng trắng sau dấu câu nếu chưa có
     text = re.sub(r'([.,;:!?()])([^\s])', r'\1 \2', text)
     
-    # Fix specific patterns for "Năm" followed by a year
+    # Sửa các mẫu cụ thể cho "Năm" theo sau là một năm
     text = re.sub(r'N\s*[aă]\s*m\s*(\d{4})', r'Năm \1', text, flags=re.IGNORECASE)
     
-    # Fix pattern for điểm chuẩn years (e.g. "Năm 2024: 20.75")
+    # Sửa mẫu cho các năm điểm chuẩn (ví dụ: "Năm 2024: 20.75")
     text = re.sub(r'([Nn][ăa]m\s*\d{4})\s*:\s*(\d+[.,]\d+)', r'\1: \2', text)
     
-    # Replace multiple consecutive newlines with just two (for paragraph separation)
+    # Thay thế nhiều ký tự xuống dòng liên tiếp bằng chỉ hai ký tự (để phân tách đoạn)
     text = re.sub(r'\n{3,}', '\n\n', text)
     
-    # Fix spaces around newlines
+    # Sửa khoảng trắng xung quanh các ký tự xuống dòng
     text = re.sub(r'\s*\n\s*', '\n', text)  
     
-    # Log the cleaned text
+    # Ghi log văn bản đã làm sạch
     logger.debug(f"Cleaned text sample (first 100 chars): {text[:100]}")
     
     return text.strip()

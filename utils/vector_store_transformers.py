@@ -1,6 +1,8 @@
 import numpy as np
 import logging
 import re
+import os
+import pickle
 import torch
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -20,7 +22,32 @@ class TransformerVectorStore:
         self.file_categories = {}  # Categorization of files by type
         self.model = SentenceTransformer(model_name)
         self.vectors = None
-        
+
+    def save_to_disk(self, filepath):
+        data = {
+            "documents": self.documents,
+            "file_sources": self.file_sources,
+            "file_indices": self.file_indices,
+            "file_categories": self.file_categories,
+            "vectors": self.vectors,
+        }
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        with open(filepath, "wb") as f:
+            pickle.dump(data, f)
+
+    def load_from_disk(self, filepath):
+        if not os.path.exists(filepath):
+            return False
+        with open(filepath, "rb") as f:
+            data = pickle.load(f)
+        self.documents = data["documents"]
+        self.file_sources = data["file_sources"]
+        self.file_indices = data["file_indices"]
+        self.file_categories = data["file_categories"]
+        self.vectors = data["vectors"]
+        return True
+
+
     def clear(self):
         """
         Clear all documents and vectors from the store
